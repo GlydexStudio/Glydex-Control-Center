@@ -1,4 +1,4 @@
 window.GCC_CONFIG = {
-  apiBase: "https://legs-sacrifice-generated-educated.trycloudflare.com",
-  appName: "Glydex Control Center"
+apiBase: "https://context-christ-worldcat-truly.trycloudflare.com",
+appName: "Glydex Control Center"
 };
