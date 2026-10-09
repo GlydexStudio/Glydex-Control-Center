@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0e13">
+  <meta name="description" content="Glydex Control Center — central administration dashboard">
+  <title>Glydex Control Center</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <a class="brand" href="#" aria-label="Glydex Control Center">
+      <span class="brand-icon">G</span>
+      <span><b>GLYDEX</b><small>CONTROL CENTER</small></span>
+    </a>
+
+    <p class="nav-label">WORKSPACE</p>
+    <nav id="navigation">
+      <button class="nav-item active" data-view="overview">◈ <span>Overview</span></button>
+      <button class="nav-item" data-view="github">⌘ <span>GitHub Manager</span></button>
+      <button class="nav-item" data-view="websites">◎ <span>Website Manager</span></button>
+      <button class="nav-item" data-view="monitor">⌁ <span>Live Monitor</span></button>
+      <button class="nav-item" data-view="analytics">▥ <span>Analytics</span></button>
+      <button class="nav-item" data-view="maintenance">⚙ <span>Maintenance</span></button>
+      <button class="nav-item" data-view="security">⬡ <span>Security &amp; Logs</span></button>
+      <button class="nav-item" data-view="finance">◫ <span>Finance Center</span></button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="connection"><span id="connectionDot"></span><div><b id="connectionText">Checking API...</b><small>GCC Backend</small></div></div>
+      <button id="logoutButton" class="logout" hidden>↪ Sign out</button>
+      <small class="version">GLYDEX STUDIO · GCC v0.3.0</small>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <button id="menuButton" class="menu-button" aria-label="Open menu">☰</button>
+      <div class="breadcrumb">Glydex Studio <span>/</span> <b id="breadcrumb">Overview</b></div>
+      <div class="top-right"><span class="status-badge"><i></i> Private Console</span><div class="avatar" id="avatar">G</div></div>
+    </header>
+
+    <section id="loginView" class="login-layout">
+      <div class="login-card">
+        <div class="login-logo">G<span>+</span></div>
+        <p class="eyebrow">GLYDEX STUDIO / PRIVATE ACCESS</p>
+        <h1>Welcome back<span class="accent">.</span></h1>
+        <p class="muted">Sign in to access your Control Center.</p>
+
+        <form id="loginForm">
+          <label for="email">Email address</label>
+          <input id="email" type="email" autocomplete="username" placeholder="you@example.com" required>
+
+          <label for="password">Password</label>
+          <input id="password" type="password" autocomplete="current-password" placeholder="Your password" required>
+
+          <button class="primary-button" id="loginButton" type="submit">Sign in <span>→</span></button>
+          <p id="loginMessage" class="message" role="status"></p>
+        </form>
+        <p class="security-note">▣ Credentials are sent to the configured GCC API only.</p>
+      </div>
+
+      <div class="login-presentation">
+        <div class="orb">G</div>
+        <p class="eyebrow">ONE CONSOLE. YOUR ECOSYSTEM.</p>
+        <h2>Everything you build.<br><span>Under control.</span></h2>
+        <p class="muted">A central workspace for your projects, websites, deployments and security.</p>
+        <div class="feature"><span>01</span> Project operations</div>
+        <div class="feature"><span>02</span> Deployment visibility</div>
+        <div class="feature"><span>03</span> Security-first access</div>
+      </div>
+    </section>
+
+    <section id="appView" hidden>
+      <div class="page-heading">
+        <div>
+          <p class="eyebrow">CONTROL CENTER</p>
+          <h1 id="pageTitle">Overview<span class="accent">.</span></h1>
+          <p id="pageDescription" class="muted">A live view of your workspace.</p>
+        </div>
+        <button id="refreshButton" class="secondary-button">↻ Refresh</button>
+      </div>
+
+      <div id="alertBox" class="alert" hidden></div>
+
+      <section id="overviewView">
+        <div class="stats">
+          <article class="stat-card">
+            <span class="stat-label">API STATUS</span>
+            <strong id="apiValue">Checking...</strong>
+            <small>Backend connection</small>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">ACCOUNT ROLE</span>
+            <strong id="roleValue">—</strong>
+            <small>Current permissions</small>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">USERS</span>
+            <strong id="usersValue">—</strong>
+            <small>Account directory</small>
+          </article>
+          <article class="stat-card">
+            <span class="stat-label">AUDIT EVENTS</span>
+            <strong id="auditValue">—</strong>
+            <small>Security records</small>
+          </article>
+        </div>
+
+        <div class="content-grid">
+          <article class="panel">
+            <div class="panel-heading">
+              <div><h2>Workspace modules</h2><p>Current implementation status</p></div>
+              <span class="tag">GCC</span>
+            </div>
+            <div class="module-row">
+              <span class="module-icon">◈</span>
+              <div class="module-copy"><b>Core API</b><small>Authentication, sessions and permissions</small></div>
+              <span class="state ready">AVAILABLE</span>
+            </div>
+            <div class="module-row">
+              <span class="module-icon">⬡</span>
+              <div class="module-copy"><b>Security &amp; Logs</b><small>Audit history from the backend</small></div>
+              <span class="state ready">API EXISTS</span>
+            </div>
+            <div class="module-row">
+              <span class="module-icon">⌘</span>
+              <div class="module-copy"><b>GitHub Manager</b><small>Repositories and activity</small></div>
+              <span class="state planned">PLANNED</span>
+            </div>
+            <div class="module-row">
+              <span class="module-icon">◎</span>
+              <div class="module-copy"><b>Website Manager</b><small>Hosting and deployment controls</small></div>
+              <span class="state planned">PLANNED</span>
+            </div>
+            <div class="module-row">
+              <span class="module-icon">⌁</span>
+              <div class="module-copy"><b>Monitoring &amp; Analytics</b><small>Uptime and usage metrics</small></div>
+              <span class="state planned">PLANNED</span>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-heading">
+              <div><h2>Current session</h2><p>Authenticated account</p></div>
+              <span class="tag">SECURE</span>
+            </div>
+            <div class="profile">
+              <div class="profile-avatar" id="profileAvatar">G</div>
+              <div><b id="profileEmail">—</b><small id="profileRole">—</small></div>
+            </div>
+            <div class="detail"><span>Authentication</span><b id="authValue">—</b></div>
+            <div class="detail"><span>API version</span><b id="versionValue">—</b></div>
+            <div class="detail"><span>Connection</span><b id="transportValue">—</b></div>
+            <p class="note">GitHub and Netlify tokens must remain on the backend. Never add private tokens to frontend files.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="moduleView" class="panel module-placeholder" hidden>
+        <div class="placeholder-icon">◈</div>
+        <p class="eyebrow">MODULE STATUS</p>
+        <h2 id="moduleTitle">GitHub Manager</h2>
+        <p class="muted" id="moduleDescription"></p>
+        <span class="state planned">NOT CONNECTED YET</span>
+      </section>
+
+      <section id="securityView" class="panel table-panel" hidden>
+        <div class="panel-heading">
+          <div><h2>Security &amp; Audit Log</h2><p>Recent records returned by the API</p></div>
+          <button id="reloadAudit" class="secondary-button">Reload logs</button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>EVENT</th><th>DETAILS</th><th>TIME</th></tr></thead>
+            <tbody id="auditRows"><tr><td colspan="3">No data loaded.</td></tr></tbody>
+          </table>
+        </div>
+        <p class="note" id="auditNote"></p>
+
+        <div id="usersPanel" class="users-panel" hidden>
+          <div class="panel-heading">
+            <div><h2>User directory</h2><p>Root administrator access</p></div>
+            <button id="reloadUsers" class="secondary-button">Reload users</button>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>USER</th><th>ROLE</th><th>STATUS</th></tr></thead>
+              <tbody id="userRows"><tr><td colspan="3">No data loaded.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <footer class="footer"><span>© Glydex Studio</span><span>Built for clarity. Designed for control.</span></footer>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
