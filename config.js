@@ -1,4 +1,4 @@
 window.GCC_CONFIG = {
-apiBase: "https://norfolk-sims-reflections-powerful.trycloudflare.com",
+apiBase: "https://iowa-tramadol-settle-yours.trycloudflare.com",
 appName: "Glydex Control Center"
 };
