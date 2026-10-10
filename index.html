@@ -167,6 +167,68 @@
         <span class="state planned">NOT CONNECTED YET</span>
       </section>
 
+      <section id="websiteView" hidden>
+        <div class="website-toolbar">
+          <div>
+            <p class="eyebrow">LIVE WEBSITE OPERATIONS</p>
+            <h2 id="websiteSummaryTitle">Website checks</h2>
+            <p id="websiteSummaryText" class="muted">Loading backend data…</p>
+          </div>
+          <div class="website-actions">
+            <button id="checkAllWebsites" class="primary-small">↻ Check all</button>
+            <button id="reloadWebsites" class="secondary-button">Reload</button>
+          </div>
+        </div>
+
+        <div class="stats website-stats">
+          <article class="stat-card"><span class="stat-label">REGISTERED SITES</span><strong id="websiteCount">—</strong><small>Backend records</small></article>
+          <article class="stat-card"><span class="stat-label">ONLINE</span><strong id="websiteOnline">—</strong><small>Latest checks</small></article>
+          <article class="stat-card"><span class="stat-label">FAILED</span><strong id="websiteFailed">—</strong><small>Latest checks</small></article>
+          <article class="stat-card"><span class="stat-label">NETLIFY API</span><strong id="netlifyState">—</strong><small id="netlifyHint">Backend configuration</small></article>
+        </div>
+
+        <article class="panel website-panel">
+          <div class="panel-heading">
+            <div><h2>Managed websites</h2><p>Real HTTP checks and response latency</p></div>
+            <span class="tag" id="websiteLastChecked">NOT CHECKED</span>
+          </div>
+          <div id="websiteCards" class="website-cards"><p class="muted">Loading…</p></div>
+        </article>
+
+        <div class="content-grid website-lower">
+          <article class="panel">
+            <div class="panel-heading"><div><h2>Add a website</h2><p>Public HTTPS domains only</p></div></div>
+            <form id="addWebsiteForm" class="website-form">
+              <label for="websiteName">Display name</label>
+              <input id="websiteName" maxlength="80" required placeholder="My website">
+              <label for="websiteUrl">HTTPS URL</label>
+              <input id="websiteUrl" type="url" required placeholder="https://example.com">
+              <button class="primary-small" id="addWebsiteButton" type="submit">+ Add website</button>
+              <p id="websiteFormMessage" class="form-message" role="status"></p>
+            </form>
+          </article>
+          <article class="panel">
+            <div class="panel-heading">
+              <div><h2>Netlify integration</h2><p>Site inventory and recent deploys</p></div>
+              <button id="reloadNetlify" class="secondary-button">Refresh</button>
+            </div>
+            <div id="netlifySites" class="netlify-list"><p class="muted">Checking configuration…</p></div>
+            <p class="note">The Netlify token stays on the backend. Never put it in config.js.</p>
+          </article>
+        </div>
+
+        <article class="panel table-panel">
+          <div class="panel-heading">
+            <div><h2>Recent check history</h2><p>Persistent backend records</p></div>
+            <button id="reloadWebsiteHistory" class="secondary-button">Reload history</button>
+          </div>
+          <div class="table-scroll"><table>
+            <thead><tr><th>WEBSITE</th><th>RESULT</th><th>HTTP</th><th>LATENCY</th><th>TIME</th></tr></thead>
+            <tbody id="websiteHistoryRows"><tr><td colspan="5">No data loaded.</td></tr></tbody>
+          </table></div>
+        </article>
+      </section>
+
       <section id="securityView" class="panel table-panel" hidden>
         <div class="panel-heading">
           <div><h2>Security &amp; Audit Log</h2><p>Recent records returned by the API</p></div>

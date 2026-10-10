@@ -231,6 +231,261 @@
     }
   }
 
+
+  function websiteStatus(check) {
+    if (!check) return 'Not checked';
+    return check.ok ? 'Online' : (check.error || 'Offline');
+  }
+
+  function renderWebsiteCards(sites) {
+    const host = $('websiteCards');
+    host.replaceChildren();
+
+    if (!sites.length) {
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = 'No websites registered.';
+      host.appendChild(p);
+      return;
+    }
+
+    sites.forEach(site => {
+      const card = document.createElement('article');
+      card.className = 'website-card';
+
+      const main = document.createElement('div');
+      main.className = 'website-card-main';
+
+      const title = document.createElement('div');
+      title.className = 'website-card-title';
+
+      const name = document.createElement('b');
+      name.textContent = site.name;
+
+      const badge = document.createElement('span');
+      badge.className = 'site-state ' +
+        (site.latestCheck ? (site.latestCheck.ok ? 'site-online' : 'site-offline') : 'site-unknown');
+      badge.textContent = websiteStatus(site.latestCheck);
+      title.append(name, badge);
+
+      const link = document.createElement('a');
+      link.href = site.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = site.url;
+
+      const details = document.createElement('small');
+      details.textContent = site.latestCheck
+        ? 'HTTP ' + (site.latestCheck.statusCode ?? '—') +
+          ' · ' + (site.latestCheck.latencyMs ?? '—') + ' ms · ' +
+          formatDate(site.latestCheck.timestamp)
+        : 'No check recorded yet.';
+
+      main.append(title, link, details);
+
+      const actions = document.createElement('div');
+      actions.className = 'website-card-actions';
+
+      const button = document.createElement('button');
+      button.className = 'secondary-button';
+      button.textContent = 'Check now';
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        button.textContent = 'Checking…';
+        try {
+          await request('/api/websites/' + encodeURIComponent(site.id) + '/check', {
+            method: 'POST', body: '{}'
+          });
+          await loadWebsites();
+        } catch (error) {
+          showError(error.message);
+        } finally {
+          button.disabled = false;
+          button.textContent = 'Check now';
+        }
+      });
+
+      actions.appendChild(button);
+      card.append(main, actions);
+      host.appendChild(card);
+    });
+  }
+
+  async function loadWebsites() {
+    const host = $('websiteCards');
+    host.textContent = 'Loading registered websites…';
+
+    try {
+      const data = await request('/api/websites');
+      const sites = Array.isArray(data.sites) ? data.sites : [];
+      const checks = sites.map(site => site.latestCheck).filter(Boolean);
+      $('websiteCount').textContent = String(sites.length);
+      $('websiteOnline').textContent = String(checks.filter(item => item.ok).length);
+      $('websiteFailed').textContent = String(checks.filter(item => !item.ok).length);
+      $('netlifyState').textContent = data.netlifyConfigured ? 'Configured' : 'Not set';
+      $('netlifyHint').textContent = data.netlifyConfigured
+        ? 'Token detected on backend' : 'Token missing on backend';
+
+      $('websiteSummaryTitle').textContent = sites.length + ' website(s) registered';
+      $('websiteSummaryText').textContent = 'Live data from the authenticated GCC API.';
+
+      const newest = checks.map(item => item.timestamp).filter(Boolean).sort().pop();
+      $('websiteLastChecked').textContent = newest
+        ? 'LAST CHECK ' + formatDate(newest) : 'NOT CHECKED';
+
+      renderWebsiteCards(sites);
+      await Promise.all([loadNetlify(), loadWebsiteHistory()]);
+    } catch (error) {
+      host.replaceChildren();
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = error.message;
+      host.appendChild(p);
+      showError('Website Manager: ' + error.message);
+    }
+  }
+
+  async function loadNetlify() {
+    const host = $('netlifySites');
+    host.replaceChildren();
+
+    try {
+      const data = await request('/api/websites/netlify');
+      const sites = Array.isArray(data.sites) ? data.sites : [];
+
+      if (!sites.length) {
+        const p = document.createElement('p');
+        p.className = 'muted';
+        p.textContent = 'No matching Netlify sites found for registered domains.';
+        host.appendChild(p);
+        return;
+      }
+
+      for (const site of sites) {
+        const item = document.createElement('div');
+        item.className = 'netlify-item';
+
+        const name = document.createElement('b');
+        name.textContent = site.name;
+
+        const state = document.createElement('span');
+        state.className = 'site-state ' + (site.foundInNetlify ? 'site-online' : 'site-unknown');
+        state.textContent = site.foundInNetlify ? 'FOUND' : 'NOT FOUND';
+
+        const url = document.createElement('small');
+        url.textContent = site.url;
+        item.append(name, state, url);
+
+        for (const deploy of (site.deploys || []).slice(0, 3)) {
+          const line = document.createElement('small');
+          line.className = 'deploy-line';
+          line.textContent = 'Deploy: ' + (deploy.state || 'unknown') +
+            ' · ' + formatDate(deploy.createdAt);
+          item.appendChild(line);
+        }
+        host.appendChild(item);
+      }
+
+      $('netlifyState').textContent = 'Connected';
+      $('netlifyHint').textContent = 'Inventory loaded from Netlify';
+    } catch (error) {
+      const p = document.createElement('p');
+      p.className = 'muted';
+      p.textContent = error.status === 503
+        ? 'Netlify token is not configured on the backend yet.'
+        : error.message;
+      host.appendChild(p);
+      $('netlifyState').textContent = error.status === 503 ? 'Not set' : 'Unavailable';
+      $('netlifyHint').textContent = error.status === 503
+        ? 'Configure token on backend' : 'API request failed';
+    }
+  }
+
+  async function loadWebsiteHistory() {
+    const body = $('websiteHistoryRows');
+    body.replaceChildren();
+
+    try {
+      const data = await request('/api/websites/history?limit=50');
+      const records = Array.isArray(data.records) ? data.records : [];
+      const sitesData = await request('/api/websites');
+      const names = Object.fromEntries((sitesData.sites || []).map(site => [site.id, site.name]));
+
+      if (!records.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 5;
+        cell.textContent = 'No checks yet. Press Check all to create real records.';
+        row.appendChild(cell);
+        body.appendChild(row);
+        return;
+      }
+
+      records.forEach(record => {
+        const row = document.createElement('tr');
+        addCell(row, names[record.siteId] || record.siteId);
+        addCell(row, record.ok ? 'Online' : (record.error || 'Offline'));
+        addCell(row, record.statusCode ?? '—');
+        addCell(row, record.latencyMs == null ? '—' : record.latencyMs + ' ms');
+        addCell(row, formatDate(record.timestamp));
+        body.appendChild(row);
+      });
+    } catch (error) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.textContent = error.message;
+      row.appendChild(cell);
+      body.appendChild(row);
+    }
+  }
+
+  async function checkAllWebsites() {
+    const button = $('checkAllWebsites');
+    button.disabled = true;
+    button.textContent = 'Checking…';
+    clearError();
+
+    try {
+      const result = await request('/api/websites/check', {
+        method: 'POST', body: '{}'
+      });
+      const results = result.results || [];
+      const online = results.filter(item => item.ok).length;
+      $('websiteSummaryText').textContent =
+        'Latest run: ' + online + ' online out of ' + results.length + '.';
+      await loadWebsites();
+    } catch (error) {
+      showError('Website check failed: ' + error.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = '↻ Check all';
+    }
+  }
+
+  async function addWebsite(event) {
+    event.preventDefault();
+    const button = $('addWebsiteButton');
+    const message = $('websiteFormMessage');
+    button.disabled = true;
+    message.textContent = '';
+
+    try {
+      const name = $('websiteName').value.trim();
+      const url = $('websiteUrl').value.trim();
+      const result = await request('/api/websites', {
+        method: 'POST', body: JSON.stringify({ name, url })
+      });
+      message.textContent = 'Added: ' + result.site.name;
+      $('addWebsiteForm').reset();
+      await loadWebsites();
+    } catch (error) {
+      message.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   function renderView(view) {
     state.view = view;
     clearError();
@@ -253,7 +508,8 @@
     $("pageDescription").textContent = description;
 
     $("overviewView").hidden = view !== "overview";
-    $("moduleView").hidden = !info;
+    $("moduleView").hidden = !info || view === "websites";
+    $("websiteView").hidden = view !== "websites";
     $("securityView").hidden = view !== "security";
 
     document.querySelectorAll(".nav-item").forEach(button => {
@@ -263,6 +519,14 @@
     if (info) {
       $("moduleTitle").textContent = title;
       $("moduleDescription").textContent = description;
+    }
+
+    if (view === "websites") {
+      if (pick(state.user, ["role"], "user") !== "root_admin") {
+        showError("Website Manager requires root_admin permission.");
+      } else {
+        loadWebsites();
+      }
     }
 
     if (view === "security") {
@@ -375,6 +639,11 @@
   });
   $("reloadAudit").addEventListener("click", loadAudit);
   $("reloadUsers").addEventListener("click", loadUsers);
+  $("reloadWebsites").addEventListener("click", loadWebsites);
+  $("reloadNetlify").addEventListener("click", loadNetlify);
+  $("reloadWebsiteHistory").addEventListener("click", loadWebsiteHistory);
+  $("checkAllWebsites").addEventListener("click", checkAllWebsites);
+  $("addWebsiteForm").addEventListener("submit", addWebsite);
   $("menuButton").addEventListener("click", () => {
     $("sidebar").classList.toggle("open");
   });
