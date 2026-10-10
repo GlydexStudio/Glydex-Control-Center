@@ -14,7 +14,7 @@
   };
 
   const moduleInfo = {
-    github: ["GitHub Manager", "Live GitHub repositories, activity and Actions."],
+    github: ["GitHub Manager", "GitHub repository and activity integration is not connected yet."],
     websites: ["Website Manager", "Netlify site inventory and deployment integration is not connected yet."],
     monitor: ["Live Monitor", "Uptime monitoring requires backend checks and stored results."],
     analytics: ["Analytics", "Analytics will be connected when a reliable data source is available."],
@@ -486,211 +486,6 @@
     }
   }
 
-
-  // GITHUB_MANAGER_CONNECTED_UI
-  let githubSelectedRepo = "";
-  let githubSelectedResource = "branches";
-
-  const githubResourceNames = {
-    branches: "Branches",
-    commits: "Commits",
-    issues: "Open Issues",
-    pulls: "Pull Requests",
-    workflows: "Workflows",
-    runs: "Recent Runs"
-  };
-
-  function githubElement(tag, className, text) {
-    const element = document.createElement(tag);
-    if (className) element.className = className;
-    if (text !== undefined) element.textContent = String(text ?? "");
-    return element;
-  }
-
-  function githubSetStatus(message, isError = false) {
-    const status = $("githubStatus");
-    status.textContent = message;
-    status.classList.toggle("github-error", isError);
-  }
-
-  function githubRenderItems(items, resource) {
-    const container = $("githubItems");
-    container.replaceChildren();
-
-    if (!items.length) {
-      container.appendChild(githubElement(
-        "p", "muted github-empty", "Nu există elemente de afișat pentru această secțiune."
-      ));
-      return;
-    }
-
-    for (const item of items) {
-      let title = "Element GitHub";
-      let details = [];
-      let url = item.html_url;
-
-      if (resource === "branches") {
-        title = item.name || "Branch";
-        details = [
-          item.protected ? "Protected branch" : "Standard branch",
-          item.commit?.sha ? "Commit: " + item.commit.sha.slice(0, 12) : ""
-        ];
-      } else if (resource === "commits") {
-        title = (item.message || "Commit").split("\n")[0];
-        details = [
-          item.author || "Autor necunoscut",
-          formatDate(item.date),
-          item.sha ? item.sha.slice(0, 12) : ""
-        ];
-      } else if (resource === "issues") {
-        title = "#" + item.number + " · " + (item.title || "Issue");
-        details = [
-          item.state || "open",
-          item.user || "Autor necunoscut",
-          (item.labels || []).join(", "),
-          "Comentarii: " + (item.comments ?? 0)
-        ];
-      } else if (resource === "pulls") {
-        title = "#" + item.number + " · " + (item.title || "Pull Request");
-        details = [
-          item.draft ? "Draft" : (item.state || "open"),
-          (item.head || "?") + " → " + (item.base || "?"),
-          item.user || "Autor necunoscut"
-        ];
-      } else if (resource === "workflows") {
-        title = item.name || "Workflow";
-        details = [item.state || "", item.path || ""];
-      } else if (resource === "runs") {
-        title = "#" + item.run_number + " · " + (item.name || "Workflow run");
-        details = [
-          item.status || "unknown",
-          item.conclusion || "În curs sau fără concluzie",
-          item.head_branch || "",
-          item.event || "",
-          formatDate(item.updated_at || item.created_at)
-        ];
-      }
-
-      const card = githubElement("article", "github-item");
-      const heading = githubElement("div", "github-item-heading");
-      const titleNode = githubElement("strong", "github-item-title", title);
-      heading.appendChild(titleNode);
-
-      if (url) {
-        const link = githubElement("a", "github-item-link", "Deschide ↗");
-        link.href = url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        heading.appendChild(link);
-      }
-
-      card.appendChild(heading);
-
-      const detailNode = githubElement("p", "github-item-details",
-        details.filter(value => value !== null && value !== undefined && value !== "").join(" · ") || "—"
-      );
-      card.appendChild(detailNode);
-      container.appendChild(card);
-    }
-  }
-
-  async function loadGitHubResource() {
-    if (!githubSelectedRepo) {
-      githubSetStatus("Selectează un repository.");
-      return;
-    }
-
-    const reload = $("githubReloadResource");
-    reload.disabled = true;
-    $("githubItems").replaceChildren();
-    githubSetStatus("Se încarcă " + githubResourceNames[githubSelectedResource] + "…");
-
-    try {
-      const parts = githubSelectedRepo.split("/");
-      const path = "/api/github/repos/" +
-        encodeURIComponent(parts[0]) + "/" +
-        encodeURIComponent(parts[1]) + "/" +
-        githubSelectedResource;
-
-      const result = await request(path);
-      if (!result || !Array.isArray(result.items)) {
-        throw new Error("API-ul a returnat un răspuns neașteptat.");
-      }
-
-      githubRenderItems(result.items, githubSelectedResource);
-      githubSetStatus(
-        result.repository + " · " + result.count + " element(e) · " +
-        githubResourceNames[githubSelectedResource]
-      );
-    } catch (error) {
-      githubSetStatus(
-        error.status === 401
-          ? "Sesiunea a expirat. Autentifică-te din nou."
-          : error.status === 403
-            ? "Acces refuzat de backend pentru acest repository."
-            : error.message || "Nu s-au putut încărca datele GitHub.",
-        true
-      );
-      $("githubItems").replaceChildren();
-    } finally {
-      reload.disabled = false;
-    }
-  }
-
-  async function loadGitHubRepositories() {
-    const reload = $("githubReloadRepos");
-    reload.disabled = true;
-    githubSetStatus("Se încarcă repository-urile…");
-
-    try {
-      const result = await request("/api/github/repositories");
-      if (!result || !Array.isArray(result.repositories)) {
-        throw new Error("API-ul a returnat un răspuns neașteptat.");
-      }
-
-      const select = $("githubRepoSelect");
-      const previous = githubSelectedRepo;
-      select.replaceChildren();
-
-      for (const repo of result.repositories) {
-        const option = document.createElement("option");
-        option.value = repo.full_name;
-        option.textContent = repo.full_name + (repo.private ? " · Private" : "");
-        select.appendChild(option);
-      }
-
-      if (!result.repositories.length) {
-        githubSelectedRepo = "";
-        githubSetStatus("API-ul nu a returnat repository-uri accesibile.", true);
-        $("githubItems").replaceChildren();
-        return;
-      }
-
-      githubSelectedRepo = result.repositories.some(r => r.full_name === previous)
-        ? previous
-        : result.repositories[0].full_name;
-
-      select.value = githubSelectedRepo;
-      $("githubRepoCount").textContent = String(result.count ?? result.repositories.length);
-      $("githubRepoVisibility").textContent =
-        result.repositories.filter(r => r.private).length + " private · " +
-        result.repositories.filter(r => !r.private).length + " public";
-
-      await loadGitHubResource();
-    } catch (error) {
-      githubSetStatus(
-        error.status === 401
-          ? "Sesiunea a expirat. Autentifică-te din nou."
-          : error.message || "Nu s-au putut încărca repository-urile.",
-        true
-      );
-      $("githubRepoSelect").replaceChildren();
-      $("githubItems").replaceChildren();
-    } finally {
-      reload.disabled = false;
-    }
-  }
-
   function renderView(view) {
     state.view = view;
     clearError();
@@ -713,9 +508,8 @@
     $("pageDescription").textContent = description;
 
     $("overviewView").hidden = view !== "overview";
-    $("moduleView").hidden = !info || view === "websites" || view === "github";
+    $("moduleView").hidden = !info || view === "websites";
     $("websiteView").hidden = view !== "websites";
-    $("githubView").hidden = view !== "github";
     $("securityView").hidden = view !== "security";
 
     document.querySelectorAll(".nav-item").forEach(button => {
@@ -734,8 +528,6 @@
         loadWebsites();
       }
     }
-
-    if (view === "github") loadGitHubRepositories();
 
     if (view === "security") {
       const isAdmin = pick(state.user, ["role"], "user") === "root_admin";
@@ -837,24 +629,6 @@
     button.addEventListener("click", () => {
       renderView(button.dataset.view);
       $("sidebar").classList.remove("open");
-    });
-  });
-
-  $("githubReloadRepos").addEventListener("click", loadGitHubRepositories);
-  $("githubReloadResource").addEventListener("click", loadGitHubResource);
-
-  $("githubRepoSelect").addEventListener("change", event => {
-    githubSelectedRepo = event.target.value;
-    loadGitHubResource();
-  });
-
-  document.querySelectorAll("[data-github-resource]").forEach(button => {
-    button.addEventListener("click", () => {
-      githubSelectedResource = button.dataset.githubResource;
-      document.querySelectorAll("[data-github-resource]").forEach(tab => {
-        tab.classList.toggle("active", tab === button);
-      });
-      loadGitHubResource();
     });
   });
 
