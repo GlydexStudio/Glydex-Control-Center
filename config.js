@@ -1,4 +1,4 @@
 window.GCC_CONFIG = {
-apiBase: "https://leone-jessica-late-graphic.trycloudflare.com",
+apiBase: "https://norfolk-sims-reflections-powerful.trycloudflare.com/api/health",
 appName: "Glydex Control Center"
 };
