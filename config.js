@@ -1,4 +1,4 @@
 window.GCC_CONFIG = {
-apiBase: "https://iowa-tramadol-settle-yours.trycloudflare.com",
+apiBase: "https://demand-app-dynamic-sacramento.trycloudflare.com",
 appName: "Glydex Control Center"
 };
